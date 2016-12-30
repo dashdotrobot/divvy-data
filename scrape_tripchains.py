@@ -4,6 +4,7 @@
 
 import sodapy
 import tripchains
+import pandas as pd
 
 
 data_url = 'data.cityofchicago.org'
@@ -14,15 +15,15 @@ data = sodapy.Socrata(data_url, None)
 valid_bikes = data.get(divvy_data,
                        select='bike_id, count(trip_id)',
                        group='bike_id',
-                       limit=10000)
+                       limit=5)
 
 bike_ids = [int(b['bike_id']) for b in valid_bikes]
-num_trips = [int(b['count_trip_id']) for b in valid_bikes]
 num_bikes = len(bike_ids)
 
-f_out = open('tripchains.txt', 'w')
-f_out.write('bike_id, tripchain_length, start_trip_id, end_trip_ed\n')
+f_csv = open('tripchains.csv', 'w')
+f_csv.write('id,bike_id,tc_length,start_trip_id,end_trip_id\n')
 
+tc_id = 0
 for i in range(num_bikes):
 
     # Get all rides from bike
@@ -43,8 +44,10 @@ for i in range(num_bikes):
                 tid_start = int(all_trips[s]['trip_id'])
                 tid_end = int(all_trips[e]['trip_id'])
 
-                f_out.write('{0:d}, {1:d}, {2:d}, {3:d}\n'
-                            .format(bike_ids[i], tcl, tid_start, tid_end))
+                f_csv.write('{0:d},{1:d},{2:d},{3:d},{4:d}\n'
+                            .format(tc_id,
+                                    bike_ids[i], tcl, tid_start, tid_end))
+                tc_id += 1
 
             success = True
             print 'Bike {0:5d}: OK: {1:4.1f} %'.format(bike_ids[i],
@@ -53,5 +56,6 @@ for i in range(num_bikes):
             print e
             print 'Retrying...'
 
+# Close resources
 data.close()
-f_out.close()
+f_csv.close()
